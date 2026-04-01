@@ -1,6 +1,6 @@
-# Finnish Video Transcriber
+# Video Transcriber
 
-Transcribe video files to timestamped text and SRT subtitles using [faster-whisper](https://github.com/SYSTRAN/faster-whisper). Default language: Finnish.
+Transcribe video files to timestamped text and SRT subtitles using [faster-whisper](https://github.com/SYSTRAN/faster-whisper). Supports 99+ languages (default: Finnish).
 
 ## Prerequisites
 
@@ -33,14 +33,14 @@ python cli.py <video_path> [--model large-v3] [--language fi] [--output <path>] 
 ### Examples
 
 ```bash
-# Basic — outputs video_transcript.txt next to the video (Finnish)
+# Finnish (default)
 python cli.py meeting.mp4
+
+# English
+python cli.py interview.mp4 --language en
 
 # With SRT subtitles
 python cli.py meeting.mp4 --srt
-
-# Transcribe English video
-python cli.py interview.mp4 --language en --srt
 
 # Faster with smaller model (less accurate)
 python cli.py meeting.mp4 --model base
@@ -74,15 +74,15 @@ Käydään ensin läpi viime viikon asiat.
 
 First run downloads the model automatically. Sizes:
 
-| Model | Download | Speed | Accuracy | Finnish Quality |
-|-------|----------|-------|----------|-----------------|
-| base | ~150MB | Fastest | Lower | Poor |
-| medium | ~1.5GB | Medium | Good | Acceptable |
-| large-v3 | ~3GB | Slowest | Best | Recommended |
+| Model | Download | Speed | Accuracy |
+|-------|----------|-------|----------|
+| base | ~150MB | Fastest | Lower |
+| medium | ~1.5GB | Medium | Good |
+| large-v3 | ~3GB | Slowest | Best |
 
 GPU (CUDA) is auto-detected. Falls back to CPU automatically.
 
-> **Note:** `tiny` and `small` models produce very poor results for Finnish and are not recommended.
+> **Note:** For non-English languages (especially Finnish), `large-v3` is strongly recommended. Smaller models struggle with less common languages.
 
 ## Tests
 
@@ -96,4 +96,4 @@ python -m mypy cli.py transcriber.py --strict
 - **"ffmpeg not found"**: Install ffmpeg and ensure it's on your PATH
 - **First run is slow**: Model downloads on first use (large-v3 is ~3GB)
 - **CUDA errors**: Ensure CUDA 12 + cuDNN 9 are installed, or it will fall back to CPU
-- **Poor Finnish accuracy**: Use `large-v3` model. Smaller models struggle with Finnish.
+- **Poor accuracy for non-English languages**: Use `large-v3` model. Smaller models struggle with less common languages.
