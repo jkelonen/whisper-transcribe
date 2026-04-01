@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import tempfile
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
+
+# Suppress noisy HuggingFace symlink warnings on Windows
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+warnings.filterwarnings("ignore", message=".*huggingface_hub.*cache-system uses symlinks.*")
 
 from faster_whisper import WhisperModel
 from tqdm import tqdm
@@ -101,8 +107,22 @@ def _detect_device() -> tuple[str, str]:
     return "cpu", "int8"
 
 
+MODEL_SIZES = {
+    "tiny": "~75MB",
+    "base": "~150MB",
+    "small": "~500MB",
+    "medium": "~1.5GB",
+    "large-v3": "~3GB",
+}
+
+
 def load_model(model_size: str = "large-v3") -> WhisperModel:
     device, compute_type = _detect_device()
+    size_hint = MODEL_SIZES.get(model_size, "unknown size")
+    print(
+        f"Note: If this is the first run with '{model_size}', "
+        f"the model ({size_hint}) will be downloaded. This may take a few minutes."
+    )
     return WhisperModel(model_size, device=device, compute_type=compute_type)
 
 

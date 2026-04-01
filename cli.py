@@ -50,7 +50,6 @@ def main(argv: list[str] | None = None) -> int:
     audio_path = None
 
     try:
-        print(f"Loading model '{args.model}'...")
         model = load_model(args.model)
 
         print(f"Extracting audio from {video_path.name}...")
