@@ -162,15 +162,17 @@ class TestExtractAudio:
 
 
 class TestLoadModel:
+    @patch("transcriber._detect_device", return_value=("cuda", "float16"))
     @patch("transcriber.WhisperModel")
-    def test_loads_with_defaults(self, MockModel):
+    def test_loads_with_gpu(self, MockModel, mock_detect):
         load_model()
-        MockModel.assert_called_once_with("large-v3", device="auto", compute_type="auto")
+        MockModel.assert_called_once_with("large-v3", device="cuda", compute_type="float16")
 
+    @patch("transcriber._detect_device", return_value=("cpu", "int8"))
     @patch("transcriber.WhisperModel")
-    def test_loads_custom_model(self, MockModel):
+    def test_loads_on_cpu_fallback(self, MockModel, mock_detect):
         load_model("base")
-        MockModel.assert_called_once_with("base", device="auto", compute_type="auto")
+        MockModel.assert_called_once_with("base", device="cpu", compute_type="int8")
 
 
 class TestTranscribeAudio:

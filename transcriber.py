@@ -88,8 +88,22 @@ def extract_audio(video_path: Path, output_path: Path | None = None) -> Path:
     return output_path
 
 
+def _detect_device() -> tuple[str, str]:
+    """Detect best available device, falling back to CPU if CUDA fails."""
+    try:
+        import ctranslate2
+        if ctranslate2.get_cuda_device_count() > 0:
+            # Verify CUDA actually works with a small operation
+            ctranslate2.StorageView.from_array([0], "cuda")
+            return "cuda", "float16"
+    except Exception:
+        pass
+    return "cpu", "int8"
+
+
 def load_model(model_size: str = "large-v3") -> WhisperModel:
-    return WhisperModel(model_size, device="auto", compute_type="auto")
+    device, compute_type = _detect_device()
+    return WhisperModel(model_size, device=device, compute_type=compute_type)
 
 
 def transcribe_audio(
