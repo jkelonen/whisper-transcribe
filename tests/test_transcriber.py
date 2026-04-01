@@ -1,3 +1,4 @@
+import os
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -47,6 +48,15 @@ class TestFormatTimestampSrt:
 
     def test_hours_with_millis(self):
         assert format_timestamp_srt(3661.5) == "01:01:01,500"
+
+    def test_rounding_overflow_seconds(self):
+        assert format_timestamp_srt(5.9999) == "00:00:06,000"
+
+    def test_rounding_overflow_minutes(self):
+        assert format_timestamp_srt(59.9999) == "00:01:00,000"
+
+    def test_rounding_overflow_hours(self):
+        assert format_timestamp_srt(3599.9999) == "01:00:00,000"
 
 
 class TestValidateVideoFile:
@@ -159,6 +169,26 @@ class TestExtractAudio:
 
         with pytest.raises(RuntimeError, match="No audio stream found"):
             extract_audio(video)
+
+    @patch("transcriber.subprocess.run")
+    def test_temp_file_cleaned_on_ffmpeg_failure(self, mock_run, tmp_path):
+        mock_run.side_effect = subprocess.CalledProcessError(
+            1, "ffmpeg", stderr=b"error"
+        )
+        video = tmp_path / "test.mp4"
+        video.touch()
+
+        import glob
+        import tempfile
+        temp_dir = tempfile.gettempdir()
+        wav_before = set(glob.glob(os.path.join(temp_dir, "*.wav")))
+
+        with pytest.raises(RuntimeError):
+            extract_audio(video)
+
+        wav_after = set(glob.glob(os.path.join(temp_dir, "*.wav")))
+        leaked = wav_after - wav_before
+        assert len(leaked) == 0, f"Temp WAV file leaked: {leaked}"
 
 
 class TestLoadModel:

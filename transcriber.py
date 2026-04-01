@@ -30,10 +30,10 @@ def format_timestamp_txt(seconds: float) -> str:
 
 
 def format_timestamp_srt(seconds: float) -> str:
-    h = int(seconds // 3600)
-    m = int((seconds % 3600) // 60)
-    s = int(seconds % 60)
-    ms = int(round((seconds % 1) * 1000))
+    total_ms = int(round(seconds * 1000))
+    h, remainder = divmod(total_ms, 3_600_000)
+    m, remainder = divmod(remainder, 60_000)
+    s, ms = divmod(remainder, 1000)
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
@@ -73,10 +73,12 @@ def format_srt(segments: list[Segment]) -> str:
 
 
 def extract_audio(video_path: Path, output_path: Path | None = None) -> Path:
+    created_temp = False
     if output_path is None:
         tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         output_path = Path(tmp.name)
         tmp.close()
+        created_temp = True
     cmd = [
         "ffmpeg", "-i", str(video_path),
         "-vn", "-ar", "16000", "-ac", "1", "-f", "wav",
@@ -85,10 +87,14 @@ def extract_audio(video_path: Path, output_path: Path | None = None) -> Path:
     try:
         subprocess.run(cmd, capture_output=True, check=True)
     except FileNotFoundError:
+        if created_temp and output_path.exists():
+            output_path.unlink()
         raise RuntimeError(
             "ffmpeg not found. Install it: https://ffmpeg.org/download.html"
         )
     except subprocess.CalledProcessError as e:
+        if created_temp and output_path.exists():
+            output_path.unlink()
         stderr = e.stderr.decode(errors="replace") if e.stderr else "Unknown error"
         raise RuntimeError(f"ffmpeg failed: {stderr}")
     return output_path
