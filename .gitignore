@@ -2,3 +2,19 @@
 __pycache__/
 *.pyc
 .mypy_cache/
+.pytest_cache/
+
+# Generated transcripts
+*_transcript.txt
+*_transcript.srt
+
+# Video files (too large for git)
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.wav
+
+# Local tooling
+skills-lock.json
