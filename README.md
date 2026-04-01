@@ -1,4 +1,4 @@
-# Video Transcriber
+# Video Transcriber (faster-whisper)
 
 Transcribe video files to timestamped text and SRT subtitles using [faster-whisper](https://github.com/SYSTRAN/faster-whisper). Supports 99+ languages (default: Finnish).
 
@@ -48,6 +48,9 @@ python cli.py meeting.mp4 --srt
 
 # Faster with smaller model (less accurate)
 python cli.py meeting.mp4 --model base
+
+# More accurate with larger model (but slower)
+python cli.py meeting.mp4 --model large-v3
 
 # Custom output path
 python cli.py meeting.mp4 --output ~/transcripts/meeting.txt --srt
