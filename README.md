@@ -30,6 +30,10 @@ pip install -r requirements.txt
 python cli.py <video_path> [--model large-v3] [--language fi] [--output <path>] [--srt]
 ```
 
+**Supported formats:** `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`
+
+**Default output:** Saved next to the video as `<name>_transcript.txt` (and `<name>_transcript.srt` with `--srt`).
+
 ### Examples
 
 ```bash
@@ -76,8 +80,10 @@ First run downloads the model automatically. Sizes:
 
 | Model | Download | Speed | Accuracy |
 |-------|----------|-------|----------|
-| base | ~150MB | Fastest | Lower |
-| medium | ~1.5GB | Medium | Good |
+| tiny | ~75MB | Fastest | Lowest |
+| base | ~150MB | Fast | Lower |
+| small | ~500MB | Moderate | Moderate |
+| medium | ~1.5GB | Slow | Good |
 | large-v3 | ~3GB | Slowest | Best |
 
 GPU (CUDA) is auto-detected. Falls back to CPU automatically.
