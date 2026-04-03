@@ -6,6 +6,7 @@ import subprocess
 from transcriber import (
     Segment, format_timestamp_srt, format_timestamp_txt, validate_video_file,
     format_txt, format_srt, extract_audio, load_model, transcribe_audio, write_output,
+    _register_nvidia_dll_directories,
 )
 
 
@@ -194,15 +195,48 @@ class TestExtractAudio:
 class TestLoadModel:
     @patch("transcriber._detect_device", return_value=("cuda", "float16"))
     @patch("transcriber.WhisperModel")
-    def test_loads_with_gpu(self, MockModel, mock_detect):
+    def test_loads_with_gpu(self, MockModel, mock_detect, capsys):
         load_model()
         MockModel.assert_called_once_with("large-v3", device="cuda", compute_type="float16")
+        assert "Using GPU (CUDA) with float16 precision" in capsys.readouterr().out
 
     @patch("transcriber._detect_device", return_value=("cpu", "int8"))
     @patch("transcriber.WhisperModel")
-    def test_loads_on_cpu_fallback(self, MockModel, mock_detect):
+    def test_loads_on_cpu_fallback(self, MockModel, mock_detect, capsys):
         load_model("base")
         MockModel.assert_called_once_with("base", device="cpu", compute_type="int8")
+        output = capsys.readouterr().out
+        assert "Using CPU with int8 precision" in output
+        assert "no compatible NVIDIA GPU detected" in output
+
+
+class TestRegisterNvidiaDllDirectories:
+    def test_does_not_crash(self):
+        """Calling the function should never raise, regardless of platform."""
+        _register_nvidia_dll_directories()
+
+    @patch("transcriber.sys")
+    def test_skips_on_non_windows(self, mock_sys):
+        mock_sys.platform = "linux"
+        # Should return early without touching os.add_dll_directory
+        _register_nvidia_dll_directories()
+
+    def test_registers_existing_nvidia_bin_dirs(self, tmp_path):
+        """When nvidia bin dirs exist, they should be registered on Windows."""
+        nvidia_bin = tmp_path / "Lib" / "site-packages" / "nvidia" / "cublas" / "bin"
+        nvidia_bin.mkdir(parents=True)
+        site_packages = str(tmp_path / "Lib" / "site-packages")
+
+        registered = []
+        with patch("transcriber.sys") as mock_sys, \
+             patch("transcriber.site") as mock_site, \
+             patch("os.add_dll_directory", side_effect=registered.append, create=True):
+            mock_sys.platform = "win32"
+            mock_site.getsitepackages.return_value = [site_packages]
+            mock_site.getusersitepackages.return_value = ""
+            _register_nvidia_dll_directories()
+
+        assert str(nvidia_bin) in registered
 
 
 class TestTranscribeAudio:

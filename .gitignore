@@ -18,3 +18,9 @@ __pycache__/
 
 # Local tooling
 skills-lock.json
+
+# CI/CD and documentation (managed separately)
+.github/
+docs/
+.agents/
+.coverage

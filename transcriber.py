@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import site
 import subprocess
+import sys
 import tempfile
 import warnings
 from dataclasses import dataclass
@@ -11,8 +13,38 @@ from pathlib import Path
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 warnings.filterwarnings("ignore", message=".*huggingface_hub.*cache-system uses symlinks.*")
 
-from faster_whisper import WhisperModel
-from tqdm import tqdm
+
+def _register_nvidia_dll_directories() -> None:
+    """Register nvidia pip package DLL directories on Windows.
+
+    Packages like nvidia-cublas-cu12 install DLLs into
+    site-packages/nvidia/*/bin/ which is not on the default DLL search path.
+    Scans all site-packages locations (venv, user, system) to find them.
+    """
+    if sys.platform != "win32" or not hasattr(os, "add_dll_directory"):
+        return
+    site_dirs: list[str] = []
+    try:
+        site_dirs.extend(site.getsitepackages())
+    except AttributeError:
+        pass
+    try:
+        site_dirs.append(site.getusersitepackages())
+    except AttributeError:
+        pass
+    for sp in site_dirs:
+        nvidia_dir = Path(sp) / "nvidia"
+        if not nvidia_dir.is_dir():
+            continue
+        for bin_dir in nvidia_dir.glob("*/bin"):
+            if bin_dir.is_dir():
+                os.add_dll_directory(str(bin_dir))
+
+
+_register_nvidia_dll_directories()
+
+from faster_whisper import WhisperModel  # noqa: E402
+from tqdm import tqdm  # noqa: E402
 
 
 @dataclass
@@ -105,8 +137,6 @@ def _detect_device() -> tuple[str, str]:
     try:
         import ctranslate2
         if ctranslate2.get_cuda_device_count() > 0:
-            # Verify CUDA actually works with a small operation
-            ctranslate2.StorageView.from_array([0], "cuda")
             return "cuda", "float16"
     except Exception:
         pass
@@ -124,6 +154,13 @@ MODEL_SIZES = {
 
 def load_model(model_size: str = "large-v3") -> WhisperModel:
     device, compute_type = _detect_device()
+    if device == "cuda":
+        print(f"Using GPU (CUDA) with {compute_type} precision")
+    else:
+        print(
+            f"Using CPU with {compute_type} precision"
+            " — no compatible NVIDIA GPU detected"
+        )
     size_hint = MODEL_SIZES.get(model_size, "unknown size")
     print(
         f"Note: If this is the first run with '{model_size}', "

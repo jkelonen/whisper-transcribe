@@ -6,7 +6,7 @@ Transcribe video files to timestamped text and SRT subtitles using [faster-whisp
 
 - Python 3.10+
 - [ffmpeg](https://ffmpeg.org/download.html) installed and on PATH
-- (Optional) NVIDIA GPU with CUDA 12 + cuDNN 9 for GPU acceleration
+- (Optional) NVIDIA GPU with up-to-date drivers for GPU acceleration (CUDA libraries are installed via pip dependencies)
 
 ## Install
 
@@ -20,7 +20,7 @@ python -m venv .venv
 # Activate (Linux/Mac)
 source .venv/bin/activate
 
-# Install dependencies (~200MB download, includes CTranslate2 engine)
+# Install dependencies (includes CTranslate2 engine + CUDA libraries)
 pip install -r requirements.txt
 ```
 
@@ -104,5 +104,5 @@ python -m mypy cli.py transcriber.py --strict
 
 - **"ffmpeg not found"**: Install ffmpeg and ensure it's on your PATH
 - **First run is slow**: Model downloads on first use (large-v3 is ~3GB)
-- **CUDA errors**: Ensure CUDA 12 + cuDNN 9 are installed, or it will fall back to CPU
+- **CUDA errors**: Ensure your NVIDIA drivers are up to date. CUDA libraries (cuBLAS, cuDNN) are installed via pip dependencies. If you still see errors, try `pip install --force-reinstall nvidia-cublas-cu12`
 - **Poor accuracy for non-English languages**: Use `large-v3` model. Smaller models struggle with less common languages.
